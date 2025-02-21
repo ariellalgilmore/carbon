@@ -20,7 +20,7 @@ import {
   BUTTON_TOOLTIP_POSITION,
 } from './button';
 import './index';
-
+import '../badge-indicator/index';
 const kind = {
   [`Primary button (${BUTTON_KIND.PRIMARY})`]: BUTTON_KIND.PRIMARY,
   [`Secondary button (${BUTTON_KIND.SECONDARY})`]: BUTTON_KIND.SECONDARY,
@@ -298,6 +298,16 @@ export const IconButton = {
       type="${type}"
       @click="${onClick}">
       ${Add16({ slot: 'icon' })}
+    </cds-button>`,
+};
+
+export const withBadgeIndicator = {
+  argTypes: controls,
+  args: defaultArgs,
+  render: ({}) =>
+    html` <cds-button kind="ghost" tooltip-text="Icon Description">
+      ${Add16({ slot: 'icon' })}
+      <cds-badge-indicator slot="badge-indicator"></cds-badge-indicator>
     </cds-button>`,
 };
 
