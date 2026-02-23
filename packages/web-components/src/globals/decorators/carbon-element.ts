@@ -11,92 +11,49 @@
  * an @ExportDecoratedItems annotation must be defined as a regular function,
  * not an arrow function.
  */
+
+import { getPrefix } from '../settings';
+
 export declare type Constructor<T> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- https://github.com/carbon-design-system/carbon/issues/20452
   new (...args: any[]): T;
 };
 
-type Finisher =
-  | (<T>(clazz: Constructor<T>) => Constructor<T>)
-  | (<T>(clazz: Constructor<T>) => void);
-
-export interface ClassDescriptor {
-  kind: 'class';
-  elements: ClassElement[];
-  finisher?: Finisher;
-}
-
-export interface ClassElement {
-  kind: 'field' | 'method';
-  key: PropertyKey;
-  placement: 'static' | 'prototype' | 'own';
-  initializer?: () => unknown;
-  extras?: ClassElement[];
-  finisher?: Finisher;
-  descriptor?: PropertyDescriptor;
-}
-
 /**
- * Allow for custom element classes with private constructors
+ * Symbol used to store the bare name (no prefix) on a custom element class.
+ * e.g. 'accordion', 'accordion-item'
  */
-type CustomElementClass = Omit<typeof HTMLElement, 'new'>;
-
-const legacyCustomElement = (tagName: string, clazz: CustomElementClass) => {
-  try {
-    customElements.define(tagName, clazz as CustomElementConstructor);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- https://github.com/carbon-design-system/carbon/issues/20452
-  } catch (error) {
-    // eslint-disable-next-line no-console -- https://github.com/carbon-design-system/carbon/issues/20452
-    console.warn(`Attempting to re-define ${tagName}`);
-  }
-  // Cast as any because TS doesn't recognize the return type as being a
-  // subtype of the decorated class when clazz is typed as
-  // `Constructor<HTMLElement>` for some reason.
-  // `Constructor<HTMLElement>` is helpful to make sure the decorator is
-  // applied to elements however.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return clazz as any;
-};
-
-const standardCustomElement = (
-  tagName: string,
-  descriptor: ClassDescriptor
-) => {
-  const { kind, elements } = descriptor;
-  return {
-    kind,
-    elements,
-    // This callback is called once the class is otherwise fully defined
-    finisher(clazz: Constructor<HTMLElement>) {
-      try {
-        customElements.define(tagName, clazz);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars -- https://github.com/carbon-design-system/carbon/issues/20452
-      } catch (error) {
-        // eslint-disable-next-line no-console -- https://github.com/carbon-design-system/carbon/issues/20452
-        console.warn(`Attempting to re-define ${tagName}`);
-      }
-    },
-  };
-};
+export const BASE_NAME = Symbol('baseName');
 
 /**
- * Class decorator factory that defines the decorated class as a custom element.
+ * Symbol used to access the fully-qualified tag name at call time.
+ * Defined as a getter on each class so it always reflects the current prefix,
+ * even if `setPrefix()` was called after the module was imported.
  *
- * ```js
- * @customElement('my-element')
- * class MyElement extends LitElement {
- *   render() {
- *     return html``;
- *   }
- * }
- * ```
+ * Usage: CDSAccordion[TAG_NAME] => 'cds-accordion' (or 'bx-accordion' etc.)
+ */
+export const TAG_NAME = Symbol('tagName');
+
+/**
+ * Class decorator that records the bare element name on the class for use
+ * with scoped element registries. Does NOT call customElements.define().
  *
- * @category Decorator
- * @param tagName The tag name of the custom element to define.
+ * The full tag name (prefix + bare name) is exposed via a getter keyed by
+ * TAG_NAME so it is always resolved against the current prefix at access time.
+ *
+ * @param baseName The bare element name without prefix, e.g. 'accordion'
  */
 export const carbonElement =
-  (tagName: string) =>
-  (classOrDescriptor: CustomElementClass | ClassDescriptor) =>
-    typeof classOrDescriptor === 'function'
-      ? legacyCustomElement(tagName, classOrDescriptor)
-      : standardCustomElement(tagName, classOrDescriptor as ClassDescriptor);
+  (baseName: string) =>
+  (clazz: any): any => {
+    // Store the bare name as a simple value — this never changes.
+    clazz[BASE_NAME] = baseName;
+
+    // Define TAG_NAME as a getter on the class (not the instance) so that
+    // it composes the prefix lazily at access time rather than at decoration time.
+    Object.defineProperty(clazz, TAG_NAME, {
+      get: () => `${getPrefix()}-${baseName}`,
+      configurable: true,
+    });
+
+    return clazz;
+  };

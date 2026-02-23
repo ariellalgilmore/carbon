@@ -4,14 +4,15 @@
  * This source code is licensed under the Apache-2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
-import { LitElement, html } from 'lit';
+import { html } from 'lit';
 import { property } from 'lit/decorators.js';
-import { prefix } from '../../globals/settings';
+import { getPrefix } from '../../globals/settings';
 import { forEach } from '../../globals/internal/collection-helpers';
 import { ACCORDION_SIZE, ACCORDION_ALIGNMENT } from './defs';
+import { ScopedLitElement } from '../../globals/base/scoped-lit-element';
+import { carbonElement, BASE_NAME } from '../../globals/decorators/carbon-element';
+import CDSAccordionItem from './accordion-item';
 import styles from './accordion.scss?lit';
-import { carbonElement as customElement } from '../../globals/decorators/carbon-element';
 
 export { ACCORDION_SIZE, ACCORDION_ALIGNMENT };
 
@@ -20,8 +21,19 @@ export { ACCORDION_SIZE, ACCORDION_ALIGNMENT };
  *
  * @element cds-accordion
  */
-@customElement(`${prefix}-accordion`)
-class CDSAccordion extends LitElement {
+@carbonElement('accordion')
+class CDSAccordion extends ScopedLitElement {
+  /**
+   * Scoped element registry — declares which child components this component
+   * uses in its template or queries. Evaluated lazily as a getter so the
+   * prefix is resolved at element upgrade time, after any `setPrefix()` call.
+   */
+  static get scopedElements() {
+    return {
+      [`${getPrefix()}-accordion-item`]: CDSAccordionItem,
+    };
+  }
+
   /**
    * Accordion size should be sm, md, lg.
    */
@@ -29,13 +41,14 @@ class CDSAccordion extends LitElement {
   size = ACCORDION_SIZE.MEDIUM;
 
   /**
-   * Specify the alignment of the accordion heading title and chevron
+   * Specify the alignment of the accordion heading title and chevron.
    */
   @property({ reflect: true })
   alignment = ACCORDION_ALIGNMENT.END;
 
   /**
-   * Specify whether Accordion text should be flush, default is false, does not work with align="start"
+   * Specify whether Accordion text should be flush, default is false,
+   * does not work with align="start".
    */
   @property({ type: Boolean, reflect: true })
   isFlush = false;
@@ -53,38 +66,37 @@ class CDSAccordion extends LitElement {
     super.connectedCallback();
   }
 
-  updated(changedProperties) {
+  updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('size')) {
-      // Propagate `size` attribute to descendants until `:host-context()` gets supported in all major browsers
+      // Propagate `size` attribute to descendants until `:host-context()` gets
+      // supported in all major browsers.
       forEach(
-        this.querySelectorAll(
-          (this.constructor as typeof CDSAccordion).selectorAccordionItems
-        ),
+        this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
           elem.setAttribute('size', this.size);
         }
       );
     }
+
     if (changedProperties.has('alignment')) {
-      // Propagate `alignment` attribute to descendants until `:host-context()` gets supported in all major browsers
+      // Propagate `alignment` attribute to descendants until `:host-context()`
+      // gets supported in all major browsers.
       forEach(
-        this.querySelectorAll(
-          (this.constructor as typeof CDSAccordion).selectorAccordionItems
-        ),
+        this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
           elem.setAttribute('alignment', this.alignment);
         }
       );
     }
+
     if (
       changedProperties.has('isFlush') ||
       changedProperties.has('alignment')
     ) {
-      // Propagate `isFlush` attribute to descendants until `:host-context()` gets supported in all major browsers
+      // Propagate `isFlush` attribute to descendants until `:host-context()`
+      // gets supported in all major browsers.
       forEach(
-        this.querySelectorAll(
-          (this.constructor as typeof CDSAccordion).selectorAccordionItems
-        ),
+        this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
           if (this.isFlush && this.alignment !== 'start') {
             elem.setAttribute('isFlush', '');
@@ -97,9 +109,7 @@ class CDSAccordion extends LitElement {
 
     if (changedProperties.has('disabled')) {
       forEach(
-        this.querySelectorAll(
-          (this.constructor as typeof CDSAccordion).selectorAccordionItems
-        ),
+        this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
           if (this.disabled) {
             elem.setAttribute('disabled', '');
@@ -110,14 +120,12 @@ class CDSAccordion extends LitElement {
       );
     }
 
-    // Marks the last accordion item for styling (simulates :last-child in Shadow DOM)
+    // Marks the last accordion item for styling (simulates :last-child in
+    // Shadow DOM where slotted children aren't reachable via CSS :last-child).
     const items = Array.from(
-      this.querySelectorAll(
-        (this.constructor as typeof CDSAccordion).selectorAccordionItems
-      )
+      this.querySelectorAll(CDSAccordion.selectorAccordionItems)
     );
     items.forEach((item) => item.removeAttribute('data-last-item'));
-
     const lastVisible = items
       .reverse()
       .find((item) => !(item as HTMLElement).hidden);
@@ -125,11 +133,15 @@ class CDSAccordion extends LitElement {
   }
 
   render() {
-    return html` <slot></slot> `;
+    return html`<slot></slot>`;
   }
 
+  /**
+   * Selector for querying accordion item descendants.
+   * Resolved at call time so it respects any `setPrefix()` call.
+   */
   static get selectorAccordionItems() {
-    return `${prefix}-accordion-item`;
+    return `${getPrefix()}-${CDSAccordionItem[BASE_NAME]}`;
   }
 
   static styles = styles;

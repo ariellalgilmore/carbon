@@ -6,16 +6,17 @@
  */
 
 import { classMap } from 'lit/directives/class-map.js';
-import { LitElement, html } from 'lit';
+import { html } from 'lit';
 import { property } from 'lit/decorators.js';
-import { prefix } from '../../globals/settings';
+import { getPrefix } from '../../globals/settings';
 import ChevronRight16 from '@carbon/icons/es/chevron--right/16.js';
 import { iconLoader } from '../../globals/internal/icon-loader';
 import FocusMixin from '../../globals/mixins/focus';
 import Handle from '../../globals/internal/handle';
+import { ScopedLitElement } from '../../globals/base/scoped-lit-element';
+import { carbonElement } from '../../globals/decorators/carbon-element';
 import { ACCORDION_ITEM_BREAKPOINT } from './defs';
 import styles from './accordion.scss?lit';
-import { carbonElement as customElement } from '../../globals/decorators/carbon-element';
 
 export { ACCORDION_ITEM_BREAKPOINT };
 
@@ -49,8 +50,8 @@ const observeResize = (observer: ResizeObserver, elem: Element) => {
  * @csspart title The title.
  * @csspart content The content.
  */
-@customElement(`${prefix}-accordion-item`)
-class CDSAccordionItem extends FocusMixin(LitElement) {
+@carbonElement('accordion-item')
+class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
   /**
    * The current breakpoint.
    */
@@ -193,29 +194,30 @@ class CDSAccordionItem extends FocusMixin(LitElement) {
       .constructor as typeof CDSAccordionItem;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- https://github.com/carbon-design-system/carbon/issues/20452
     const { [currentBreakpoint!]: classBreakpoint } = classesBreakpoints;
+    const p = getPrefix();
     const contentClasses = classMap({
       [classBreakpoint]: classBreakpoint,
-      [`${prefix}--accordion__content`]: true,
+      [`${p}--accordion__content`]: true,
     });
     return html`
       <button
         ?disabled="${disabled}"
         type="button"
         part="expando"
-        class="${prefix}--accordion__heading"
+        class="${p}--accordion__heading"
         aria-controls="content"
         aria-expanded="${open}"
         @click="${handleClickExpando}"
         @keydown="${handleKeydownExpando}">
         ${iconLoader(ChevronRight16, {
           part: 'expando-icon',
-          class: `${prefix}--accordion__arrow`,
+          class: `${p}--accordion__arrow`,
         })}
-        <div part="title" class="${prefix}--accordion__title">
+        <div part="title" class="${p}--accordion__title">
           <slot name="title">${title}</slot>
         </div>
       </button>
-      <div class="${prefix}--accordion__wrapper" part="wrapper">
+      <div class="${p}--accordion__wrapper" part="wrapper">
         <div id="content" part="content" class="${contentClasses}">
           <slot></slot>
         </div>
@@ -225,13 +227,15 @@ class CDSAccordionItem extends FocusMixin(LitElement) {
 
   /**
    * The CSS classes for breakpoints.
+   * Evaluated as a getter so the prefix is resolved at call time.
    *
    * @private
    */
   static get _classesBreakpoints() {
+    const p = getPrefix();
     return {
-      [ACCORDION_ITEM_BREAKPOINT.SMALL]: `${prefix}-ce--accordion__content--${ACCORDION_ITEM_BREAKPOINT.SMALL}`,
-      [ACCORDION_ITEM_BREAKPOINT.MEDIUM]: `${prefix}-ce--accordion__content--${ACCORDION_ITEM_BREAKPOINT.MEDIUM}`,
+      [ACCORDION_ITEM_BREAKPOINT.SMALL]: `${p}-ce--accordion__content--${ACCORDION_ITEM_BREAKPOINT.SMALL}`,
+      [ACCORDION_ITEM_BREAKPOINT.MEDIUM]: `${p}-ce--accordion__content--${ACCORDION_ITEM_BREAKPOINT.MEDIUM}`,
     };
   }
 
@@ -250,20 +254,26 @@ class CDSAccordionItem extends FocusMixin(LitElement) {
   /**
    * The name of the custom event fired before this accordion item is being toggled upon a user gesture.
    * Cancellation of this event stops the user-initiated action of toggling this accordion item.
+   * Evaluated as a getter so the prefix is resolved at call time.
    */
   static get eventBeforeToggle() {
-    return `${prefix}-accordion-item-beingtoggled`;
+    return `${getPrefix()}-accordion-item-beingtoggled`;
   }
 
   /**
    * The name of the custom event fired after this accordion item is toggled upon a user gesture.
+   * Evaluated as a getter so the prefix is resolved at call time.
    */
   static get eventToggle() {
-    return `${prefix}-accordion-item-toggled`;
+    return `${getPrefix()}-accordion-item-toggled`;
   }
 
+  /**
+   * Selector for the accordion content element within the shadow root.
+   * Evaluated as a getter so the prefix is resolved at call time.
+   */
   static get selectorAccordionContent() {
-    return `.${prefix}--accordion__content`;
+    return `.${getPrefix()}--accordion__content`;
   }
 
   static styles = styles;

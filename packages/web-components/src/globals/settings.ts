@@ -1,78 +1,98 @@
 /**
- * Copyright IBM Corp. 2019, 2024
+ * Copyright IBM Corp. 2019, 2026
  *
  * This source code is licensed under the Apache-2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-const prefix = 'cds';
+let _prefix = 'cds';
+
+export const getPrefix = () => _prefix;
+
+export const setPrefix = (p: string) => {
+  _prefix = p;
+};
 
 /**
- * A selector selecting tabbable nodes.
- * Borrowed from `carbon-angular`. tabbable === focusable.
+ * @deprecated Use `getPrefix()` instead to support custom prefixes.
  */
-const selectorTabbable = `
+export const prefix = _prefix;
+
+/**
+ * Returns a selector string of tabbable nodes, evaluated with the current prefix.
+ * Borrowed from `carbon-angular`. tabbable === focusable.
+ *
+ * This is a function rather than a constant so the prefix is resolved at
+ * call time, allowing consumers to call `setPrefix()` before any components
+ * are used.
+ */
+export const getSelectorTabbable = (): string => {
+  const p = getPrefix();
+  return `
   a[href]:not(#start-sentinel, #end-sentinel), area[href], input:not([disabled]):not([tabindex='-1']),
   button:not([disabled]):not([tabindex='-1']),select:not([disabled]):not([tabindex='-1']),
   textarea:not([disabled]):not([tabindex='-1']),
   iframe, object, embed, *[tabindex]:not([tabindex='-1']), *[contenteditable=true],
-  ${prefix}-accordion-item,
-  ${prefix}-actionable-notification-button,
-  ${prefix}-ai-label,
-  ${prefix}-button,
-  ${prefix}-breadcrumb-link,
-  ${prefix}-checkbox,
-  ${prefix}-code-snippet,
-  ${prefix}-combo-box,
-  ${prefix}-content-switcher-item,
-  ${prefix}-copy-button,
-  ${prefix}-table-header-row,
-  ${prefix}-table-row,
-  ${prefix}-table-toolbar-search,
-  ${prefix}-date-picker-input,
-  ${prefix}-dropdown,
-  ${prefix}-icon-button,
-  ${prefix}-input,
-  ${prefix}-link,
-  ${prefix}-number-input,
-  ${prefix}-modal,
-  ${prefix}-modal-close-button,
-  ${prefix}-modal-footer-button,
-  ${prefix}-multi-select,
-  ${prefix}-inline-notification,
-  ${prefix}-toast-notification,
-  ${prefix}-overflow-menu,
-  ${prefix}-overflow-menu-item,
-  ${prefix}-page-sizes-select,
-  ${prefix}-pages-select,
-  ${prefix}-progress-step,
-  ${prefix}-radio-button,
-  ${prefix}-search,
-  ${prefix}-slider,
-  ${prefix}-slider-input,
-  ${prefix}-structured-list,
-  ${prefix}-tab,
-  ${prefix}-filter-tag,
-  ${prefix}-textarea,
-  ${prefix}-text-input,
-  ${prefix}-clickable-tile,
-  ${prefix}-expandable-tile,
-  ${prefix}-radio-tile,
-  ${prefix}-selectable-tile,
-  ${prefix}-toggle,
-  ${prefix}-tooltip,
-  ${prefix}-tooltip-definition,
-  ${prefix}-tooltip-icon,
-  ${prefix}-header-menu,
-  ${prefix}-header-menu-button,
-  ${prefix}-header-menu-item,
-  ${prefix}-header-name,
-  ${prefix}-header-nav-item,
-  ${prefix}-side-nav-link,
-  ${prefix}-side-nav-menu,
-  ${prefix}-side-nav-menu-item,
-  ${prefix}-slug
+  ${p}-accordion-item,
+  ${p}-actionable-notification-button,
+  ${p}-ai-label,
+  ${p}-button,
+  ${p}-breadcrumb-link,
+  ${p}-checkbox,
+  ${p}-code-snippet,
+  ${p}-combo-box,
+  ${p}-content-switcher-item,
+  ${p}-copy-button,
+  ${p}-table-header-row,
+  ${p}-table-row,
+  ${p}-table-toolbar-search,
+  ${p}-date-picker-input,
+  ${p}-dropdown,
+  ${p}-icon-button,
+  ${p}-input,
+  ${p}-link,
+  ${p}-number-input,
+  ${p}-modal,
+  ${p}-modal-close-button,
+  ${p}-modal-footer-button,
+  ${p}-multi-select,
+  ${p}-inline-notification,
+  ${p}-toast-notification,
+  ${p}-overflow-menu,
+  ${p}-overflow-menu-item,
+  ${p}-page-sizes-select,
+  ${p}-pages-select,
+  ${p}-progress-step,
+  ${p}-radio-button,
+  ${p}-search,
+  ${p}-slider,
+  ${p}-slider-input,
+  ${p}-structured-list,
+  ${p}-tab,
+  ${p}-filter-tag,
+  ${p}-textarea,
+  ${p}-text-input,
+  ${p}-clickable-tile,
+  ${p}-expandable-tile,
+  ${p}-radio-tile,
+  ${p}-selectable-tile,
+  ${p}-toggle,
+  ${p}-tooltip,
+  ${p}-tooltip-definition,
+  ${p}-tooltip-icon,
+  ${p}-header-menu,
+  ${p}-header-menu-button,
+  ${p}-header-menu-item,
+  ${p}-header-name,
+  ${p}-header-nav-item,
+  ${p}-side-nav-link,
+  ${p}-side-nav-menu,
+  ${p}-side-nav-menu-item,
+  ${p}-slug
 `;
+};
 
-// Because we're going to have a bunch of exports
-export { prefix, selectorTabbable };
+/**
+ * @deprecated Use `getSelectorTabbable()` instead to support custom prefixes.
+ */
+export const selectorTabbable = getSelectorTabbable();
