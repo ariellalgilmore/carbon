@@ -10,7 +10,7 @@ import { getPrefix } from '../../globals/settings';
 import { forEach } from '../../globals/internal/collection-helpers';
 import { ACCORDION_SIZE, ACCORDION_ALIGNMENT } from './defs';
 import { ScopedLitElement } from '../../globals/base/scoped-lit-element';
-import { carbonElement, BASE_NAME } from '../../globals/decorators/carbon-element';
+import { BASE_NAME, TAG_NAME } from '../../globals/decorators/carbon-element';
 import CDSAccordionItem from './accordion-item';
 import styles from './accordion.scss?lit';
 
@@ -21,8 +21,9 @@ export { ACCORDION_SIZE, ACCORDION_ALIGNMENT };
  *
  * @element cds-accordion
  */
-@carbonElement('accordion')
 class CDSAccordion extends ScopedLitElement {
+  static [BASE_NAME] = 'accordion';
+
   /**
    * Scoped element registry — declares which child components this component
    * uses in its template or queries. Evaluated lazily as a getter so the
@@ -68,8 +69,6 @@ class CDSAccordion extends ScopedLitElement {
 
   updated(changedProperties: Map<string, unknown>) {
     if (changedProperties.has('size')) {
-      // Propagate `size` attribute to descendants until `:host-context()` gets
-      // supported in all major browsers.
       forEach(
         this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
@@ -79,8 +78,6 @@ class CDSAccordion extends ScopedLitElement {
     }
 
     if (changedProperties.has('alignment')) {
-      // Propagate `alignment` attribute to descendants until `:host-context()`
-      // gets supported in all major browsers.
       forEach(
         this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
@@ -93,8 +90,6 @@ class CDSAccordion extends ScopedLitElement {
       changedProperties.has('isFlush') ||
       changedProperties.has('alignment')
     ) {
-      // Propagate `isFlush` attribute to descendants until `:host-context()`
-      // gets supported in all major browsers.
       forEach(
         this.querySelectorAll(CDSAccordion.selectorAccordionItems),
         (elem) => {
@@ -120,8 +115,6 @@ class CDSAccordion extends ScopedLitElement {
       );
     }
 
-    // Marks the last accordion item for styling (simulates :last-child in
-    // Shadow DOM where slotted children aren't reachable via CSS :last-child).
     const items = Array.from(
       this.querySelectorAll(CDSAccordion.selectorAccordionItems)
     );
@@ -146,5 +139,10 @@ class CDSAccordion extends ScopedLitElement {
 
   static styles = styles;
 }
+
+Object.defineProperty(CDSAccordion, TAG_NAME, {
+  get: () => `${getPrefix()}-${CDSAccordion[BASE_NAME]}`,
+  configurable: true,
+});
 
 export default CDSAccordion;

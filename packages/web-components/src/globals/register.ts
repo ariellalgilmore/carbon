@@ -5,56 +5,62 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { TAG_NAME } from './decorators/carbon-element';
+import { TAG_NAME, BASE_NAME } from './decorators/carbon-element';
+import { getPrefix } from './settings';
+
+function define(tagName: string, component: any): void {
+  try {
+    customElements.define(tagName, component);
+  } catch {
+    console.warn(
+      `[carbon-web-components] Attempting to re-define "${tagName}".`
+    );
+  }
+}
 
 /**
- * Registers one or more Carbon component classes in the global custom element
- * registry using their current tag name (prefix + base name).
+ * Registers Carbon component classes in the global custom element registry.
  *
- * Use this only when you are NOT using scoped elements — for example in plain
- * HTML pages, SSR environments, or frameworks that manage their own element
- * lifecycle outside of a Lit shadow root.
+ * Can be called in two ways:
  *
- * Must be called AFTER any `setPrefix()` call, since the tag name is resolved
- * at the moment `registerGlobal` runs.
+ * 1. Pass component classes directly — tag names are composed from the
+ *    current prefix + the component's BASE_NAME:
+ *    registerGlobal(CDSAccordion, CDSAccordionItem)
  *
- * @example
- * // Plain HTML page — register everything
- * import '@carbon/web-components/global';
- *
- * @example
- * // Selective registration with a custom prefix
- * import { setPrefix } from '@carbon/web-components/es/globals/settings.js';
- * import { registerGlobal } from '@carbon/web-components/es/globals/register.js';
- * import CDSAccordion from '@carbon/web-components/es/components/accordion/accordion.js';
- * import CDSAccordionItem from '@carbon/web-components/es/components/accordion/accordion-item.js';
- *
- * setPrefix('bx');
- * registerGlobal(CDSAccordion, CDSAccordionItem);
- * // Registers as 'bx-accordion' and 'bx-accordion-item'
+ * 2. Pass a tag map for full control over tag names:
+ *    registerGlobal({ 'my-accordion': CDSAccordion, 'my-accordion-item': CDSAccordionItem })
  */
-export function registerGlobal(...components: any[]): void {
-  for (const component of components) {
-    const tagName = component[TAG_NAME];
+export function registerGlobal(tagMap: Record<string, any>): void;
+export function registerGlobal(...components: any[]): void;
+export function registerGlobal(...args: any[]): void {
+  if (
+    args.length === 1 &&
+    typeof args[0] === 'object' &&
+    !Array.isArray(args[0])
+  ) {
+    // Tag map form: { 'my-accordion': CDSAccordion }
+    for (const [tagName, component] of Object.entries(args[0])) {
+      define(tagName, component);
+    }
+    return;
+  }
+
+  // Component list form: registerGlobal(CDSAccordion, CDSAccordionItem)
+  for (const component of args) {
+    const baseName = component[BASE_NAME];
+    const tagName = baseName
+      ? `${getPrefix()}-${baseName}`
+      : component[TAG_NAME];
 
     if (!tagName) {
       console.warn(
-        '[carbon-web-components] Component has no TAG_NAME metadata. ' +
-          'Ensure the @carbonElement decorator has been applied:',
+        '[carbon-web-components] Component has no tag name metadata. ' +
+          'Ensure the @carbonElement decorator has been applied or use the tag map form.',
         component
       );
       continue;
     }
 
-    try {
-      customElements.define(tagName, component);
-    } catch (error) {
-      // Most likely a re-registration attempt — safe to warn and continue.
-      console.warn(
-        `[carbon-web-components] Attempting to re-define "${tagName}". ` +
-          'This is usually caused by importing the same component twice or ' +
-          'loading multiple versions of @carbon/web-components on the same page.'
-      );
-    }
+    define(tagName, component);
   }
 }

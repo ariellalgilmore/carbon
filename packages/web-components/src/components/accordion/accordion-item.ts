@@ -14,7 +14,7 @@ import { iconLoader } from '../../globals/internal/icon-loader';
 import FocusMixin from '../../globals/mixins/focus';
 import Handle from '../../globals/internal/handle';
 import { ScopedLitElement } from '../../globals/base/scoped-lit-element';
-import { carbonElement } from '../../globals/decorators/carbon-element';
+import { BASE_NAME, TAG_NAME } from '../../globals/decorators/carbon-element';
 import { ACCORDION_ITEM_BREAKPOINT } from './defs';
 import styles from './accordion.scss?lit';
 
@@ -50,8 +50,9 @@ const observeResize = (observer: ResizeObserver, elem: Element) => {
  * @csspart title The title.
  * @csspart content The content.
  */
-@carbonElement('accordion-item')
 class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
+  static [BASE_NAME] = 'accordion-item';
+
   /**
    * The current breakpoint.
    */
@@ -129,7 +130,6 @@ class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
   /**
    * The `ResizeObserver` instance for observing element resizes for re-positioning floating menu position.
    */
-  // TODO: Wait for `.d.ts` update to support `ResizeObserver`
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- https://github.com/carbon-design-system/carbon/issues/20452
   // @ts-ignore
   private _resizeObserver = new ResizeObserver(
@@ -254,7 +254,6 @@ class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
   /**
    * The name of the custom event fired before this accordion item is being toggled upon a user gesture.
    * Cancellation of this event stops the user-initiated action of toggling this accordion item.
-   * Evaluated as a getter so the prefix is resolved at call time.
    */
   static get eventBeforeToggle() {
     return `${getPrefix()}-accordion-item-beingtoggled`;
@@ -262,7 +261,6 @@ class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
 
   /**
    * The name of the custom event fired after this accordion item is toggled upon a user gesture.
-   * Evaluated as a getter so the prefix is resolved at call time.
    */
   static get eventToggle() {
     return `${getPrefix()}-accordion-item-toggled`;
@@ -270,7 +268,6 @@ class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
 
   /**
    * Selector for the accordion content element within the shadow root.
-   * Evaluated as a getter so the prefix is resolved at call time.
    */
   static get selectorAccordionContent() {
     return `.${getPrefix()}--accordion__content`;
@@ -278,5 +275,10 @@ class CDSAccordionItem extends FocusMixin(ScopedLitElement) {
 
   static styles = styles;
 }
+
+Object.defineProperty(CDSAccordionItem, TAG_NAME, {
+  get: () => `${getPrefix()}-${CDSAccordionItem[BASE_NAME]}`,
+  configurable: true,
+});
 
 export default CDSAccordionItem;

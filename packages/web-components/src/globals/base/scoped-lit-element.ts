@@ -12,7 +12,10 @@ import { getPrefix } from '../settings';
 
 const DEFAULT_CSS_PREFIX = 'cds';
 
-const styleCache = new WeakMap<typeof LitElement, Map<string, CSSStyleSheet[]>>();
+const styleCache = new WeakMap<
+  typeof LitElement,
+  Map<string, CSSStyleSheet[]>
+>();
 
 function getRemappedSheets(
   ctor: typeof LitElement,
@@ -28,9 +31,19 @@ function getRemappedSheets(
   const sheets = (ctor.elementStyles ?? []).map((s) => {
     const sheet = new CSSStyleSheet();
     const remapped = (s as CSSResult).cssText
-      .replace(new RegExp(`${DEFAULT_CSS_PREFIX}-ce--`, 'g'), `${newPrefix}-ce--`)
-      .replace(new RegExp(`${DEFAULT_CSS_PREFIX}--`, 'g'), `${newPrefix}--`)
-      .replace(new RegExp(`${DEFAULT_CSS_PREFIX}-`, 'g'), `${newPrefix}-`);
+      .replace(
+        new RegExp(`${DEFAULT_CSS_PREFIX}`, 'g'),
+        `${newPrefix}`
+      )
+      // .replace(
+      //   new RegExp(`${DEFAULT_CSS_PREFIX}-ce--`, 'g'),
+      //   `${newPrefix}-ce--`
+      // )
+      // .replace(new RegExp(`${DEFAULT_CSS_PREFIX}--`, 'g'), `${newPrefix}--`)
+      // .replace(
+      //   new RegExp(`:host\\(${DEFAULT_CSS_PREFIX}-`, 'g'),
+      //   `:host(${newPrefix}-`
+      // );
 
     sheet.replaceSync(remapped);
     return sheet;
@@ -55,7 +68,10 @@ export class ScopedLitElement extends ScopedElementsMixin(LitElement) {
 
     const ctor = this.constructor as typeof LitElement;
     if (this.shadowRoot) {
-      this.shadowRoot.adoptedStyleSheets = getRemappedSheets(ctor, currentPrefix);
+      this.shadowRoot.adoptedStyleSheets = getRemappedSheets(
+        ctor,
+        currentPrefix
+      );
     }
   }
 }
