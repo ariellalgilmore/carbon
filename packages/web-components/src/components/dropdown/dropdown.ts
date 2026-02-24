@@ -9,7 +9,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { LitElement, html, TemplateResult } from 'lit';
 import { property, query, state } from 'lit/decorators.js';
-import { prefix } from '../../globals/settings';
+import { getPrefix } from '../../globals/settings';
 import { iconLoader } from '../../globals/internal/icon-loader';
 import WarningFilled16 from '@carbon/icons/es/warning--filled/16.js';
 import WarningAltFilled16 from '@carbon/icons/es/warning--alt--filled/16.js';
@@ -33,8 +33,9 @@ import {
   NAVIGATION_DIRECTION,
 } from './defs';
 import CDSDropdownItem from './dropdown-item';
+import { ScopedLitElement } from '../../globals/base/scoped-lit-element';
+import { BASE_NAME, TAG_NAME } from '../../globals/decorators/carbon-element';
 import styles from './dropdown.scss?lit';
-import { carbonElement as customElement } from '../../globals/decorators/carbon-element';
 
 export {
   DROPDOWN_KEYBOARD_ACTION,
@@ -62,10 +63,20 @@ export {
  * @fires cds-dropdown-selected - The custom event fired after a dropdown item is selected upon a user gesture.
  * @fires cds-dropdown-toggled - The custom event fired after the open state of this dropdown is toggled upon a user gesture.
  */
-@customElement(`${prefix}-dropdown`)
 class CDSDropdown extends ValidityMixin(
-  HostListenerMixin(FormMixin(FocusMixin(LitElement)))
+  HostListenerMixin(FormMixin(FocusMixin(ScopedLitElement)))
 ) {
+  static [BASE_NAME] = 'dropdown';
+
+  /**
+   * Scoped element registry.
+   */
+  static get scopedElements() {
+    return {
+      [`${getPrefix()}-dropdown-item`]: CDSDropdownItem,
+    };
+  }
+
   /**
    * `true` if there is an AI Label.
    */
@@ -102,14 +113,13 @@ class CDSDropdown extends ValidityMixin(
 
   /**
    * `true` if the trigger button should be focusable.
-   * Derived class can set `false` to this if the trigger button contains another primary focusable element (e.g. `input`).
    */
   protected _shouldTriggerBeFocusable = true;
 
   /**
    * The list box `<div>` node.
    */
-  @query(`.${prefix}--list-box`)
+  @query(`.${getPrefix()}--list-box`)
   protected _listBoxNode!: HTMLDivElement;
 
   /**
@@ -137,7 +147,7 @@ class CDSDropdown extends ValidityMixin(
   protected _slotTitleTextNode!: HTMLSlotElement;
 
   /**
-   * @param itemToSelect A dropdown item. Absense of this argument means clearing selection.
+   * @param itemToSelect A dropdown item. Absence of this argument means clearing selection.
    * @returns `true` if the selection of this dropdown should change if the given item is selected upon user interaction.
    */
   protected _selectionShouldChange(itemToSelect?: CDSDropdownItem) {
@@ -149,7 +159,7 @@ class CDSDropdown extends ValidityMixin(
    *
    * @param itemToSelect
    *   A dropdown item.
-   *   Absense of this argument means clearing selection, which may be handled by a derived class.
+   *   Absence of this argument means clearing selection, which may be handled by a derived class.
    */
   protected _selectionDidChange(itemToSelect?: CDSDropdownItem) {
     const constructor = this.constructor as typeof CDSDropdown;
@@ -435,7 +445,6 @@ class CDSDropdown extends ValidityMixin(
   protected _handleKeypressInner(event: KeyboardEvent) {
     const { key } = event;
     const action = (this.constructor as typeof CDSDropdown).getAction(key);
-    // When closed
     if (!this.open) {
       if (this.readOnly && action === DROPDOWN_KEYBOARD_ACTION.TRIGGERING) {
         if (key === ' ' || key === 'Space') {
@@ -465,7 +474,6 @@ class CDSDropdown extends ValidityMixin(
           break;
       }
     } else {
-      // When open
       switch (action) {
         case DROPDOWN_KEYBOARD_ACTION.TRIGGERING: {
           const constructor = this.constructor as typeof CDSDropdown;
@@ -491,12 +499,6 @@ class CDSDropdown extends ValidityMixin(
       }
     }
   }
-
-  /**
-   * Handles `blur` event handler on the document this element is in.
-   *
-   * @param event The event.
-   */
 
   protected _handleMouseoverInner(event: MouseEvent) {
     if (!this.open) {
@@ -577,7 +579,6 @@ class CDSDropdown extends ValidityMixin(
           ? (elem as HTMLElement).matches(
               (this.constructor as typeof CDSDropdown).aiLabelItem
             ) ||
-            // remove reference to slug in v12
             (elem as HTMLElement).matches(
               (this.constructor as typeof CDSDropdown).slugItem
             )
@@ -601,7 +602,7 @@ class CDSDropdown extends ValidityMixin(
   }
 
   /**
-   * Updates listeners for AI decorator nodes to ensure only one menu stays open.
+   * Updates listeners for AI decorator nodes.
    */
   private _updateAIDecoratorListeners(nodes: HTMLElement[]) {
     this._aiDecoratorNodes.forEach((node) => {
@@ -618,7 +619,7 @@ class CDSDropdown extends ValidityMixin(
   /**
    * Handles user-initiated selection of a dropdown item.
    *
-   * @param [item] The dropdown item user wants to select. Absense of this argument means clearing selection.
+   * @param [item] The dropdown item user wants to select. Absence of this argument means clearing selection.
    */
   protected _handleUserInitiatedSelectItem(item?: CDSDropdownItem) {
     if (item?.hasAttribute('disabled')) {
@@ -657,7 +658,6 @@ class CDSDropdown extends ValidityMixin(
     }
   }
 
-  // Default dropdowns close after user selection.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- https://github.com/carbon-design-system/carbon/issues/20452
   protected _shouldCloseAfterSelection(_item?: CDSDropdownItem) {
     return true;
@@ -665,8 +665,6 @@ class CDSDropdown extends ValidityMixin(
 
   /**
    * Handles user-initiated toggling the open state.
-   *
-   * @param [force] If specified, forces the open state to the given one.
    */
   protected _handleUserInitiatedToggle(
     force = !this.open,
@@ -730,9 +728,6 @@ class CDSDropdown extends ValidityMixin(
     }
   }
 
-  /**
-   * Clears the selection of dropdown items.
-   */
   protected _clearHighlight() {
     this._setHighlightedItem();
   }
@@ -878,8 +873,9 @@ class CDSDropdown extends ValidityMixin(
    */
   protected _renderLabel(): TemplateResult {
     const { label, _selectedItemContent: selectedItemContent } = this;
+    const p = getPrefix();
     return html`
-      <span id="trigger-label" class="${prefix}--list-box__label"
+      <span id="trigger-label" class="${p}--list-box__label"
         >${selectedItemContent || label}</span
       >
     `;
@@ -896,11 +892,12 @@ class CDSDropdown extends ValidityMixin(
       _slotTitleTextNode: slotTitleTextNode,
       _handleSlotchangeLabelText: handleSlotchangeLabelText,
     } = this;
+    const p = getPrefix();
 
     const labelClasses = classMap({
-      [`${prefix}--label`]: true,
-      [`${prefix}--label--disabled`]: disabled,
-      [`${prefix}--visually-hidden`]: hideLabel,
+      [`${p}--label`]: true,
+      [`${p}--label--disabled`]: disabled,
+      [`${p}--visually-hidden`]: hideLabel,
     });
 
     const hasTitleText =
@@ -943,7 +940,6 @@ class CDSDropdown extends ValidityMixin(
 
   /**
    * 'aria-label' of the ListBox component.
-   * Specify a label to be read by screen readers on the container node
    */
   @property({ type: String, attribute: 'aria-label' })
   ariaLabel = '';
@@ -1096,7 +1092,6 @@ class CDSDropdown extends ValidityMixin(
     }
     if (changedProperties.has('disabled')) {
       const { disabled } = this;
-      // Propagate `disabled` attribute to descendants until `:host-context()` gets supported in all major browsers
       forEach(this.querySelectorAll(selectorItem), (elem) => {
         const item = elem as CDSDropdownItem;
         if (disabled) {
@@ -1111,8 +1106,6 @@ class CDSDropdown extends ValidityMixin(
       });
     }
     if (changedProperties.has('value')) {
-      // `<cds-multi-select>` updates selection beforehand
-      // because our rendering logic for `<cds-multi-select>` looks for selected items via `qSA()`
       forEach(this.querySelectorAll(selectorItem), (elem) => {
         (elem as CDSDropdownItem).selected =
           (elem as CDSDropdownItem).value === this.value;
@@ -1135,6 +1128,7 @@ class CDSDropdown extends ValidityMixin(
   }
 
   updated(changedProperties) {
+    const p = getPrefix();
     if (this._hasAILabel) {
       this.setAttribute('ai-label', '');
     } else {
@@ -1144,15 +1138,15 @@ class CDSDropdown extends ValidityMixin(
     const label = this.shadowRoot?.querySelector("slot[name='ai-label']");
     if (label) {
       label?.classList.toggle(
-        `${prefix}--slug--revert`,
-        this.querySelector(`${prefix}-ai-label`)?.hasAttribute('revert-active')
+        `${p}--slug--revert`,
+        this.querySelector(`${p}-ai-label`)?.hasAttribute('revert-active')
       );
     } else {
       this.shadowRoot
         ?.querySelector("slot[name='slug']")
         ?.classList.toggle(
-          `${prefix}--slug--revert`,
-          this.querySelector(`${prefix}-slug`)?.hasAttribute('revert-active')
+          `${p}--slug--revert`,
+          this.querySelector(`${p}-slug`)?.hasAttribute('revert-active')
         );
     }
 
@@ -1174,9 +1168,6 @@ class CDSDropdown extends ValidityMixin(
     }
   }
 
-  /**
-   * Clears Floating UI styles when auto-align is off or the menu closes.
-   */
   private _resetFloatingStyles() {
     const menu = this._menuBodyNode;
     if (!menu) {
@@ -1191,9 +1182,6 @@ class CDSDropdown extends ValidityMixin(
     menu.removeAttribute('align');
   }
 
-  /**
-   * Runs Floating UI placement while auto-align is active.
-   */
   private _updateAutoAlignPlacement() {
     if (!this.autoalign || !this.open) {
       return;
@@ -1220,9 +1208,6 @@ class CDSDropdown extends ValidityMixin(
     });
   }
 
-  /**
-   * Normalizes validation props based on disabled and readOnly states
-   */
   protected get _normalizedProps() {
     const { disabled, readOnly, invalid, warn } = this;
     return {
@@ -1232,12 +1217,10 @@ class CDSDropdown extends ValidityMixin(
     };
   }
 
-  /**
-   * The CSS class list for dropdown listbox
-   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- https://github.com/carbon-design-system/carbon/issues/20452
   protected get _classes(): any {
     const { size, type, open, autoalign } = this;
+    const p = getPrefix();
     const inline = type === DROPDOWN_TYPE.INLINE;
     const normalizedProps = this._normalizedProps;
 
@@ -1246,18 +1229,18 @@ class CDSDropdown extends ValidityMixin(
     ).length;
 
     return classMap({
-      [`${prefix}--dropdown`]: true,
-      [`${prefix}--list-box`]: true,
-      [`${prefix}--list-box--disabled`]: normalizedProps.disabled,
-      [`${prefix}--list-box--inline`]: inline,
-      [`${prefix}--list-box--expanded`]: open,
-      [`${prefix}--list-box--${size}`]: size,
-      [`${prefix}--dropdown--invalid`]: normalizedProps.invalid,
-      [`${prefix}--dropdown--warn`]: normalizedProps.warn,
-      [`${prefix}--dropdown--inline`]: inline,
-      [`${prefix}--dropdown--selected`]: selectedItemsCount > 0,
-      [`${prefix}--list-box__wrapper--decorator`]: this._hasAILabel,
-      [`${prefix}--autoalign`]: autoalign,
+      [`${p}--dropdown`]: true,
+      [`${p}--list-box`]: true,
+      [`${p}--list-box--disabled`]: normalizedProps.disabled,
+      [`${p}--list-box--inline`]: inline,
+      [`${p}--list-box--expanded`]: open,
+      [`${p}--list-box--${size}`]: size,
+      [`${p}--dropdown--invalid`]: normalizedProps.invalid,
+      [`${p}--dropdown--warn`]: normalizedProps.warn,
+      [`${p}--dropdown--inline`]: inline,
+      [`${p}--dropdown--selected`]: selectedItemsCount > 0,
+      [`${p}--list-box__wrapper--decorator`]: this._hasAILabel,
+      [`${p}--autoalign`]: autoalign,
     });
   }
 
@@ -1283,6 +1266,7 @@ class CDSDropdown extends ValidityMixin(
       _handleAILabelSlotChange: handleAILabelSlotChange,
       _slotHelperTextNode: slotHelperTextNode,
     } = this;
+    const p = getPrefix();
     const inline = type === DROPDOWN_TYPE.INLINE;
     const normalizedProps = this._normalizedProps;
 
@@ -1294,12 +1278,12 @@ class CDSDropdown extends ValidityMixin(
     }
 
     const helperClasses = classMap({
-      [`${prefix}--form__helper-text`]: true,
-      [`${prefix}--form__helper-text--disabled`]: normalizedProps.disabled,
+      [`${p}--form__helper-text`]: true,
+      [`${p}--form__helper-text--disabled`]: normalizedProps.disabled,
     });
     const iconContainerClasses = classMap({
-      [`${prefix}--list-box__menu-icon`]: true,
-      [`${prefix}--list-box__menu-icon--open`]: open,
+      [`${p}--list-box__menu-icon`]: true,
+      [`${p}--list-box__menu-icon--open`]: open,
     });
     const toggleLabel = (open ? toggleLabelOpen : toggleLabelClosed) || '';
     const hasHelperText =
@@ -1310,13 +1294,13 @@ class CDSDropdown extends ValidityMixin(
     const validityIcon = !normalizedProps.invalid
       ? undefined
       : iconLoader(WarningFilled16, {
-          class: `${prefix}--list-box__invalid-icon`,
+          class: `${p}--list-box__invalid-icon`,
           'aria-label': toggleLabel,
         });
     const warningIcon = !normalizedProps.warn
       ? undefined
       : iconLoader(WarningAltFilled16, {
-          class: `${prefix}--list-box__invalid-icon ${prefix}--list-box__invalid-icon--warning`,
+          class: `${p}--list-box__invalid-icon ${p}--list-box__invalid-icon--warning`,
           'aria-label': toggleLabel,
         });
     const helperMessage = normalizedProps.invalid
@@ -1330,7 +1314,7 @@ class CDSDropdown extends ValidityMixin(
         aria-label="${ifDefined(ariaLabel ? ariaLabel : undefined)}"
         id="menu-body"
         part="menu-body"
-        class="${prefix}--list-box__menu"
+        class="${p}--list-box__menu"
         role="listbox"
         tabindex="-1"
         ?hidden=${!open}
@@ -1352,7 +1336,7 @@ class CDSDropdown extends ValidityMixin(
           id="${ifDefined(
             !shouldTriggerBeFocusable ? undefined : 'trigger-button'
           )}"
-          class="${prefix}--list-box__field"
+          class="${p}--list-box__field"
           part="trigger-button"
           tabindex="${ifDefined(!shouldTriggerBeFocusable ? undefined : '0')}"
           role="${ifDefined(
@@ -1408,67 +1392,64 @@ class CDSDropdown extends ValidityMixin(
    * A selector that will return highlighted items.
    */
   static get selectorItemHighlighted() {
-    return `${prefix}-dropdown-item[highlighted]`;
+    return `${getPrefix()}-dropdown-item[highlighted]`;
   }
 
   /**
    * A selector that will return dropdown items.
    */
   static get selectorItem() {
-    return `${prefix}-dropdown-item`;
+    return `${getPrefix()}-dropdown-item`;
   }
 
   /**
    * A selector that will return selected items.
    */
   static get selectorItemSelected() {
-    return `${prefix}-dropdown-item[selected]`;
+    return `${getPrefix()}-dropdown-item[selected]`;
   }
 
   /**
    * The name of the custom event fired before a dropdown item is selected upon a user gesture.
-   * Cancellation of this event stops changing the user-initiated selection.
    */
   static get eventBeforeSelect() {
-    return `${prefix}-dropdown-beingselected`;
+    return `${getPrefix()}-dropdown-beingselected`;
   }
 
   /**
-   * The name of the custom event fired after a a dropdown item is selected upon a user gesture.
+   * The name of the custom event fired after a dropdown item is selected upon a user gesture.
    */
   static get eventSelect() {
-    return `${prefix}-dropdown-selected`;
+    return `${getPrefix()}-dropdown-selected`;
   }
 
   /**
-   * The name of the custom event fired before this dropdown item is being toggled upon a user gesture.
-   * Cancellation of this event stops the user-initiated action of toggling this dropdown item.
+   * The name of the custom event fired before this dropdown is being toggled upon a user gesture.
    */
   static get eventBeforeToggle() {
-    return `${prefix}-dropdown-beingtoggled`;
+    return `${getPrefix()}-dropdown-beingtoggled`;
   }
 
   /**
-   * The name of the custom event fired after this dropdown item is toggled upon a user gesture.
+   * The name of the custom event fired after this dropdown is toggled upon a user gesture.
    */
   static get eventToggle() {
-    return `${prefix}-dropdown-toggled`;
+    return `${getPrefix()}-dropdown-toggled`;
   }
 
   /**
    * A selector that will return the slug item.
-   *
    * remove in v12
    */
   static get slugItem() {
-    return `${prefix}-slug`;
+    return `${getPrefix()}-slug`;
   }
 
   /**
    * A selector that will return the AI Label item.
    */
   static get aiLabelItem() {
-    return `${prefix}-ai-label`;
+    return `${getPrefix()}-ai-label`;
   }
 
   static shadowRootOptions = {
@@ -1479,7 +1460,7 @@ class CDSDropdown extends ValidityMixin(
   static styles = styles;
 
   /**
-   * @returns A action for dropdown for the given key symbol.
+   * @returns An action for dropdown for the given key symbol.
    */
   static getAction(key: string) {
     if (key === 'Escape') {
@@ -1494,5 +1475,10 @@ class CDSDropdown extends ValidityMixin(
     return DROPDOWN_KEYBOARD_ACTION.NONE;
   }
 }
+
+Object.defineProperty(CDSDropdown, TAG_NAME, {
+  get: () => `${getPrefix()}-${CDSDropdown[BASE_NAME]}`,
+  configurable: true,
+});
 
 export default CDSDropdown;

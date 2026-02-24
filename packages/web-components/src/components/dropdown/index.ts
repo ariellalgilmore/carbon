@@ -5,6 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import './dropdown';
-import './dropdown-item';
+// import './dropdown';
+// import './dropdown-item';
 import './dropdown-skeleton';
+
+import { registerGlobal } from '../../globals/register';
+import CDSDropdown from './dropdown';
+import CDSDropdownItem from './dropdown-item';
+
+registerGlobal(CDSDropdown, CDSDropdownItem);
